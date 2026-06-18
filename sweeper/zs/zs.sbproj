@@ -9,7 +9,7 @@
   "PackageReferences": [],
   "EditorReferences": null,
   "Mounts": null,
-  "IsStandaloneOnly": false,
+  "IsStandaloneOnly": true,
   "Metadata": {
     "MaxPlayers": 64,
     "MinPlayers": 1,
@@ -22,7 +22,22 @@
     "RankType": "None",
     "PerMapRanking": false,
     "LeaderboardType": "None",
-    "CsProjName": "",
-    "StartupScene": "scenes/minimal.scene"
+    "CsProjName": "ZS",
+    "StartupScene": "scenes/minimal.scene",
+    "Compiler": {
+      "RootNamespace": "ZS",
+      "DefineConstants": "ZS",
+      "NoWarn": "1701;1702;1591;",
+      "WarningsAsErrors": "",
+      "TreatWarningsAsErrors": false,
+      "Nullables": false,
+      "ReleaseMode": "Debug",
+      "AssemblyReferences": [],
+      "ReplacementDirectives": {
+        ".Server.cs": "SERVER"
+      },
+      "IgnoreFolders": [],
+      "DistinctAssemblyReferences": []
+    }
   }
 }
