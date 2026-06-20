@@ -43,11 +43,35 @@ public class UseButton : Component
 	[Property]
 	public float MaxLiftWeight { get; set; } = 100f;
 
+	/// <summary>
+	/// Объект камеры (глаза игрока). Если не задан — берётся Scene.Camera.
+	/// Именно от него считается направление поднятия/удержания предмета,
+	/// а не от поворота тела игрока (тело обычно не наклоняется по pitch).
+	/// </summary>
+	[Property]
+	public GameObject CameraObject { get; set; }
+
 	private Rigidbody carriedObject;
 	private PickableItem carriedItem;
 	private bool isPinned = false;
 	private Vector3 pinnedPosition;
 	private bool isCarrying => carriedObject != null;
+
+	/// <summary>
+	/// Позиция и поворот камеры/глаз игрока.
+	/// Используется вместо Transform тела, чтобы предмет реально следовал за камерой (включая взгляд вверх/вниз).
+	/// </summary>
+	private (Vector3 Position, Rotation Rotation) GetEyeTransform()
+	{
+		if ( CameraObject != null )
+			return (CameraObject.Transform.Position, CameraObject.Transform.Rotation);
+
+		if ( Scene.Camera != null )
+			return (Scene.Camera.Transform.Position, Scene.Camera.Transform.Rotation);
+
+		// Фоллбэк, если камера не найдена — хотя бы тело игрока
+		return (Transform.Position, Transform.Rotation);
+	}
 
 	protected override void OnUpdate()
 	{
@@ -90,19 +114,19 @@ public class UseButton : Component
 
 	private void TryPickupObject()
 	{
-		var player = this.GameObject;
-		if ( player == null ) return;
+		var (eyePos, eyeRot) = GetEyeTransform();
 
-		var forward = player.Transform.Rotation.Forward;
-		var startPos = player.Transform.Position + player.Transform.Rotation.Up * 50f;
+		var forward = eyeRot.Forward;
+		var startPos = eyePos;
 		var endPos = startPos + forward * PickupRange;
 
 		Log.Info( $"Ищу предметы от {startPos} до {endPos}" );
 
-		// Sphere cast для поиска объектов
+		// Sphere cast для поиска объектов (игнорируем самого игрока, иначе луч сразу упрётся в собственный коллайдер)
 		var hits = Scene.Trace
 			.Ray( startPos, endPos )
 			.Radius( 20f )
+			.IgnoreGameObjectHierarchy( GameObject )
 			.RunAll()
 			.ToList();
 
@@ -176,15 +200,12 @@ public class UseButton : Component
 	{
 		if ( !isCarrying ) return;
 
-		var player = this.GameObject;
-		if ( player == null ) return;
-
 		// Включаем физику обратно
 		carriedObject.Enabled = true;
 
-		// Устанавливаем начальную скорость в направлении взгляда
-		var forward = player.Transform.Rotation.Forward;
-		carriedObject.Velocity = forward * 300f;
+		// Устанавливаем начальную скорость в направлении взгляда камеры
+		var (_, eyeRot) = GetEyeTransform();
+		carriedObject.Velocity = eyeRot.Forward * 300f;
 
 		if ( carriedItem != null )
 		{
@@ -202,11 +223,10 @@ public class UseButton : Component
 	{
 		if ( !isCarrying || carriedObject == null ) return;
 
-		var player = this.GameObject;
-		if ( player == null ) return;
+		var (eyePos, eyeRot) = GetEyeTransform();
 
-		// Позиция перед игроком и выше - ПРЯМО перед камерой
-		var targetPos = player.Transform.Position + player.Transform.Rotation.Forward * CarryDistance + player.Transform.Rotation.Up * 30f;
+		// Позиция перед камерой
+		var targetPos = eyePos + eyeRot.Forward * CarryDistance;
 
 		if ( isPinned )
 		{
@@ -227,6 +247,8 @@ public class UseButton : Component
 				var trace = Scene.Trace
 					.Ray( currentPos, targetPos )
 					.Radius( 20f ) // Размер объекта
+					.IgnoreGameObjectHierarchy( carriedObject.GameObject ) // иначе луч сразу бьёт в собственный коллайдер предмета
+					.IgnoreGameObjectHierarchy( GameObject ) // и в коллайдер игрока
 					.Run();
 
 				if ( trace.Hit && trace.Distance < distance )
