@@ -3911,7 +3911,11 @@
       "__version": 2,
       "Flags": 0,
       "Name": "corrugated_wall_a_128",
+<<<<<<< HEAD
       "Position": "-569.914246,-92.7024841,50.7444",
+=======
+      "Position": "95.1525574,8.94493484,1.65005493",
+>>>>>>> 509c039c580155aca5a607991efe539e0bc5c236
       "Rotation": "0,0,0,1",
       "Scale": "1,1,1",
       "Tags": "",
@@ -4054,6 +4058,11 @@
       "CustomBounds": false
     },
     "GameObjectSystems": {
+      "Sandbox.Clutter.ClutterGridSystem": {
+        "Storage": {
+          "$blob": "33085cdb-8a07-4434-a85c-0e803814bd4c"
+        }
+      },
       "Sandbox.SelectionSetsSystem": {
         "Data": {
           "SelectionSets": []
