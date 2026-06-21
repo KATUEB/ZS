@@ -45,12 +45,20 @@ public class UseButton : Component
 	public float MaxCarryVelocity { get; set; } = 600f;
 
 	/// <summary>
-	/// Насколько сильно гасится паразитное вращение от столкновений, когда предмет
-	/// не вращается вручную. 0 = крутится от ударов сколько угодно (максимально "реалистично",
-	/// но может бесконтрольно завертеться), большое значение = почти сразу стабилизируется.
+	/// Насколько сильно гасится вращение пока предмет в руках и ничего не касается.
+	/// Высокое значение (10-20) = предмет быстро стабилизируется и держит одно направление.
+	/// Низкое значение (1-3) = предмет долго крутится от любого касания.
+	/// Столкновения со стенами/пропами всё равно передают импульс — он просто быстро затухает.
 	/// </summary>
 	[Property]
-	public float AngularDamping { get; set; } = 2f;
+	public float AngularDamping { get; set; } = 15f;
+
+	/// <summary>
+	/// Порог угловой скорости (рад/сек), ниже которого вращение считается "паразитным" и гасится агрессивно.
+	/// Выше порога (после удара) — предмет ещё немного покрутится прежде чем остановиться.
+	/// </summary>
+	[Property]
+	public float AngularDampingThreshold { get; set; } = 2f;
 
 	/// <summary>
 	/// Скорость вращения поднятого предмета в режиме свободного вращения (градусы/сек на пиксель мыши)
@@ -89,11 +97,20 @@ public class UseButton : Component
 	private List<Rigidbody> carriedSubParts = new();
 	private bool isCarrying => carriedObject != null;
 
+	// Кешируем PlayerController чтобы не искать его каждый кадр
+	private PlayerController playerController;
+
 	/// <summary>
-	/// True, пока игрок держит кнопку свободного вращения. Подключи проверку этого свойства
-	/// в своём скрипте обзора камеры: если true — не крути камеру мышью, отдай дельту сюда.
+	/// True, пока игрок держит кнопку свободного вращения.
 	/// </summary>
 	public bool IsFreeRotating { get; private set; }
+
+	protected override void OnAwake()
+	{
+		base.OnAwake();
+		// Ищем PlayerController на этом же объекте или в иерархии
+		playerController = Components.Get<PlayerController>( FindMode.EverythingInSelfAndAncestors );
+	}
 
 	private (Vector3 Position, Rotation Rotation) GetEyeTransform()
 	{
@@ -108,8 +125,6 @@ public class UseButton : Component
 
 	/// <summary>
 	/// Ищет PickableItem на объекте или у его родителей.
-	/// Нужно для составных пропов (например из облака), где луч попадает в child-коллайдер,
-	/// а PickableItem/Rigidbody висят на корневом объекте модели.
 	/// </summary>
 	private static PickableItem FindPickable( GameObject go )
 	{
@@ -127,10 +142,7 @@ public class UseButton : Component
 	}
 
 	/// <summary>
-	/// Собирает ВСЕ Rigidbody во всей иерархии пропа (сам объект + все дети рекурсивно).
-	/// Нужно для составных моделей, у которых отдельные детали (например крышка ящика)
-	/// имеют собственный Rigidbody - иначе при подъёме они остаются самостоятельными
-	/// физическими телами и разлетаются от основного объекта.
+	/// Собирает ВСЕ Rigidbody во всей иерархии пропа.
 	/// </summary>
 	private static void CollectRigidbodies( GameObject go, List<Rigidbody> result )
 	{
@@ -153,6 +165,13 @@ public class UseButton : Component
 
 	private void HandleInput()
 	{
+		// Если объект пропал (уничтожен снаружи) — чистим состояние до обработки ввода
+		if ( isCarrying && (carriedObject == null || !carriedObject.IsValid() || !carriedObject.GameObject.IsValid()) )
+		{
+			Log.Info( "Переносимый объект исчез — сброс состояния" );
+			ForceReleaseCarriedObject();
+		}
+
 		if ( Input.Pressed( "use" ) )
 		{
 			Log.Info( $"Use нажата. Несу: {isCarrying}" );
@@ -163,11 +182,6 @@ public class UseButton : Component
 				TryPickupObject();
 		}
 
-		// Режим свободного вращения - удерживаешь кнопку, камера должна "замереть",
-		// а мышь крутит сам предмет.
-		// Input.Down падает с исключением, если такого Input Action ещё нет в проекте -
-		// оборачиваем в try/catch, чтобы это не валило весь Update, пока действие не добавлено
-		// в Project Settings -> Input.
 		bool freeRotateHeld = false;
 		try
 		{
@@ -182,7 +196,7 @@ public class UseButton : Component
 		if ( IsFreeRotating )
 			RotateCarriedObject();
 
-		// Secondary Attack - поставить предмет на месте навсегда и отпустить руки
+		// Secondary Attack — закрепить предмет в воздухе
 		if ( Input.Pressed( "attack2" ) && isCarrying )
 			PinAndReleaseObject();
 	}
@@ -200,7 +214,7 @@ public class UseButton : Component
 		var hits = Scene.Trace
 			.Ray( startPos, endPos )
 			.Radius( 20f )
-			.IgnoreGameObjectHierarchy( GameObject ) // не цепляем самого игрока
+			.IgnoreGameObjectHierarchy( GameObject )
 			.RunAll()
 			.ToList();
 
@@ -230,14 +244,19 @@ public class UseButton : Component
 				continue;
 			}
 
-			// Rigidbody берём с того же объекта, где PickableItem - так гарантированно
-			// двигаем именно ту иерархию, на которой висит сам предмет (и его визуал),
-			// а не случайный коллизионный кусок составной модели.
+			// FIX 1: Если предмет закреплён (Rigidbody выключен) — включаем его обратно перед подъёмом
 			var rigidbody = pickable.GameObject.Components.Get<Rigidbody>();
 			if ( rigidbody == null )
 			{
 				Log.Info( $"  -> На {pickable.GameObject.Name} нет Rigidbody" );
 				continue;
+			}
+
+			if ( pickable.IsPinned )
+			{
+				Log.Info( $"  -> Предмет закреплён, открепляем перед подъёмом" );
+				rigidbody.Enabled = true;
+				pickable.SetPinned( false );
 			}
 
 			var distance = (pickable.GameObject.Transform.Position - startPos).Length;
@@ -267,27 +286,24 @@ public class UseButton : Component
 		carriedObject = rigidbody;
 		carriedItem = pickable;
 
-		// Физику НЕ выключаем - предмет остаётся динамическим, чтобы реально
-		// толкаться/прокручиваться от столкновений. Убираем только гравитацию,
-		// чтобы он не "проседал" пока висит перед камерой.
-		carriedObject.Enabled = true; // защита на случай, если остался выключен от старого бага
+		carriedObject.Enabled = true;
 		carriedObject.Gravity = false;
 
-		// На случай, если тело "спит" - явно разбудим, иначе оно может зависнуть
-		// и не реагировать ни на Velocity, ни на гравитацию после броска.
 		if ( carriedObject.PhysicsBody != null )
 			carriedObject.PhysicsBody.Sleeping = false;
 
-		// Если у пропа есть отдельные физические детали (например крышка ящика,
-		// у которой свой Rigidbody) - на время переноса отключаем их физику.
-		// Раз они дети основного объекта, их Transform всё равно будет следовать
-		// за родителем автоматически, и весь проп будет двигаться как единое целое.
+		// FIX 2: Сбрасываем угловую скорость при подъёме — предмет сразу стабилен
+		carriedObject.AngularVelocity = Vector3.Zero;
+
 		var allParts = new List<Rigidbody>();
 		CollectRigidbodies( pickable.GameObject, allParts );
 		carriedSubParts = allParts.Where( rb => rb != carriedObject ).ToList();
 
 		foreach ( var part in carriedSubParts )
 			part.Enabled = false;
+
+		// FIX 4: Снижаем скорость ходьбы через PlayerController
+		ApplyWeightSpeedPenalty( pickable.Weight );
 
 		pickable.OnPickedUp();
 
@@ -312,6 +328,9 @@ public class UseButton : Component
 			part.Enabled = true;
 		carriedSubParts.Clear();
 
+		// FIX 4: Возвращаем нормальную скорость
+		RestoreNormalSpeed();
+
 		carriedItem?.OnDropped();
 
 		Log.Info( $"Отпущен предмет: {carriedObject.GameObject.Name}" );
@@ -324,32 +343,61 @@ public class UseButton : Component
 	{
 		if ( !isCarrying || carriedObject == null ) return;
 
+		// Проверяем, что объект ещё жив в s&box (не удалён, не деактивирован сценой).
+		// Обычный null-check не ловит уничтоженные объекты — нужен IsValid().
+		if ( !carriedObject.IsValid() || !carriedObject.GameObject.IsValid() )
+		{
+			Log.Info( "Переносимый объект был уничтожен — автоматически отпускаем" );
+			ForceReleaseCarriedObject();
+			return;
+		}
+
 		var (eyePos, eyeRot) = GetEyeTransform();
 		var targetPos = eyePos + eyeRot.Forward * CarryDistance;
 
 		var currentPos = carriedObject.Transform.Position;
 		var posError = targetPos - currentPos;
 
-		// Двигаем предмет через скорость (а не телепортом Transform.Position) -
-		// тогда реальные столкновения со стенами/углами решает физика сама,
-		// и предмет скользит/прокручивается, а не просто упирается.
 		var desiredVelocity = posError * CarrySpeed;
 		if ( desiredVelocity.Length > MaxCarryVelocity )
 			desiredVelocity = desiredVelocity.Normal * MaxCarryVelocity;
 
 		carriedObject.Velocity = desiredVelocity;
 
-		// Если не крутим вручную - просто слегка гасим вращение, не убивая его полностью,
-		// чтобы удар об угол всё ещё мог провернуть предмет, но не закручивал его навечно.
+		// FIX 2: Умное гашение вращения.
 		if ( !IsFreeRotating )
-			carriedObject.AngularVelocity *= MathX.Clamp( 1f - Time.Delta * AngularDamping, 0f, 1f );
+		{
+			var angVel = carriedObject.AngularVelocity;
+			float angSpeed = angVel.Length;
+
+			float dampFactor;
+			if ( angSpeed > AngularDampingThreshold )
+			{
+				dampFactor = MathX.Clamp( 1f - Time.Delta * (AngularDamping * 0.3f), 0f, 1f );
+			}
+			else
+			{
+				dampFactor = MathX.Clamp( 1f - Time.Delta * AngularDamping, 0f, 1f );
+			}
+
+			carriedObject.AngularVelocity = angVel * dampFactor;
+		}
 	}
 
 	/// <summary>
-	/// Свободное вращение предмета мышью (вызывается только пока зажата FreeRotateAction).
-	/// Крутим через AngularVelocity, а не напрямую через Transform.Rotation,
-	/// чтобы не конфликтовать с физическим решением столкновений.
+	/// Принудительно сбрасывает состояние переноса без попытки обращаться к объекту.
+	/// Используется когда объект был уничтожен снаружи пока был в руках.
 	/// </summary>
+	private void ForceReleaseCarriedObject()
+	{
+		carriedSubParts.Clear();
+		RestoreNormalSpeed();
+		carriedItem?.OnDropped();
+		carriedObject = null;
+		carriedItem = null;
+		IsFreeRotating = false;
+	}
+
 	private void RotateCarriedObject()
 	{
 		if ( carriedObject == null ) return;
@@ -361,15 +409,12 @@ public class UseButton : Component
 		var pitchSpeed = -mouseDelta.y * RotationSpeed * RotationSensitivity * 0.02f;
 
 		carriedObject.AngularVelocity = Vector3.Up * yawSpeed + eyeRot.Right * pitchSpeed;
-
-		Log.Info( $"Вращаю предмет (свободно). Дельта мыши: {mouseDelta}" );
 	}
 
 	/// <summary>
-	/// Ставит текущий предмет на месте навсегда и отпускает руки -
-	/// предмет больше не привязан к UseButton, просто висит в мире с выключенной физикой
-	/// до тех пор, пока кто-нибудь не подойдёт и не подберёт его снова через Use
-	/// (TryPickupObject обработает это как обычный подбор).
+	/// Закрепляет предмет в воздухе и освобождает руки.
+	/// FIX 1: Теперь помечаем предмет как IsPinned = true, чтобы при следующем Use
+	/// TryPickupObject сначала его открепил, а потом поднял.
 	/// </summary>
 	private void PinAndReleaseObject()
 	{
@@ -378,20 +423,45 @@ public class UseButton : Component
 
 		obj.Velocity = Vector3.Zero;
 		obj.AngularVelocity = Vector3.Zero;
-		obj.Enabled = false; // полностью отключаем физику - больше никто его не двигает
+		obj.Gravity = false; // убрать гравитацию — предмет висит на месте
+		obj.Enabled = false; // отключаем физику, предмет не движется
 
-		// Детали (например крышка) остаются отключены вместе с основным объектом -
-		// весь проп так и висит как единое целое, пока его не подберут заново.
+		// Помечаем как закреплённый — TryPickupObject включит его обратно
+		item?.SetPinned( true );
+
+		// Детали остаются отключены вместе с основным
 		carriedSubParts.Clear();
+
+		// FIX 4: Возвращаем скорость при закреплении
+		RestoreNormalSpeed();
 
 		item?.OnDropped();
 
-		Log.Info( $"Предмет {obj.GameObject.Name} закреплен в воздухе (навсегда, до повторного подбора)" );
+		Log.Info( $"Предмет {obj.GameObject.Name} закреплён в воздухе (IsPinned=true, поднимется через Use)" );
 
-		// Освобождаем руки - можно сразу поднимать что-то другое,
-		// закреплённый предмет от этого никуда не денется
 		carriedObject = null;
 		carriedItem = null;
+	}
+
+	// FIX 4: Применяем штраф к скорости через PlayerController
+	private void ApplyWeightSpeedPenalty( float weight )
+	{
+		if ( playerController == null ) return;
+
+		var multiplier = CalculateSpeedMultiplier( weight );
+		playerController.WalkSpeed = BaseCarrySpeed * multiplier;
+
+		Log.Info( $"Скорость ходьбы изменена на {playerController.WalkSpeed} (вес: {weight}, множитель: {multiplier:F2})" );
+	}
+
+	// FIX 4: Восстанавливаем скорость из BaseCarrySpeed (она равна нормальной скорости игрока)
+	private void RestoreNormalSpeed()
+	{
+		if ( playerController == null ) return;
+
+		playerController.WalkSpeed = BaseCarrySpeed;
+
+		Log.Info( $"Скорость ходьбы восстановлена: {playerController.WalkSpeed}" );
 	}
 
 	private float CalculateSpeedMultiplier( float weight )
@@ -409,12 +479,6 @@ public class UseButton : Component
 	}
 
 	public bool IsCarrying => isCarrying;
-
-	/// <summary>
-	/// Закреплённый предмет больше не привязан к UseButton (руки свободны),
-	/// поэтому пока что-то держишь в руках - оно никогда "запинено".
-	/// Свойство оставлено для совместимости с CarrySpeedController.
-	/// </summary>
 	public bool IsPinned => false;
 	public Rigidbody CarriedObject => carriedObject;
 }
