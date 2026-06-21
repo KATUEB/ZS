@@ -49,7 +49,7 @@
           "__guid": "1f4f043c-4c16-4090-b119-513402e00688",
           "__enabled": true,
           "Flags": 0,
-          "Center": "0,0,0",
+          "Center": "0,0.0453453064,0",
           "ColliderFlags": 0,
           "Elasticity": null,
           "Friction": null,
@@ -65,7 +65,7 @@
           "OnTriggerEnter": null,
           "OnTriggerExit": null,
           "RollingResistance": null,
-          "Scale": "50,50,50",
+          "Scale": "50,50.0906906,50",
           "Static": false,
           "Surface": null,
           "SurfaceVelocity": "0,0,0"
@@ -204,6 +204,7 @@
           "__enabled": true,
           "Flags": 0,
           "AngularDamping": 2,
+          "AngularDampingThreshold": 2,
           "BaseCarrySpeed": 200,
           "CameraObject": null,
           "CarryDistance": 150.65573,
@@ -2928,12 +2929,14 @@
                   "__guid": "e1591c6c-2187-4a27-9236-8625b7c3616f",
                   "__enabled": true,
                   "Flags": 0,
+                  "ChildWeightFraction": 0.5,
                   "OnComponentDestroy": null,
                   "OnComponentDisabled": null,
                   "OnComponentEnabled": null,
                   "OnComponentFixedUpdate": null,
                   "OnComponentStart": null,
                   "OnComponentUpdate": null,
+                  "PropagateToChildren": true,
                   "UseGlowEffectWhenCarried": true,
                   "Weight": 10
                 }
@@ -3069,12 +3072,14 @@
                   "__guid": "377a95ad-6b1e-4516-9892-9800781c7bb8",
                   "__enabled": true,
                   "Flags": 0,
+                  "ChildWeightFraction": 0.5,
                   "OnComponentDestroy": null,
                   "OnComponentDisabled": null,
                   "OnComponentEnabled": null,
                   "OnComponentFixedUpdate": null,
                   "OnComponentStart": null,
                   "OnComponentUpdate": null,
+                  "PropagateToChildren": true,
                   "UseGlowEffectWhenCarried": true,
                   "Weight": 10
                 }
@@ -3154,12 +3159,14 @@
                   "__guid": "8f046369-e45e-4b77-90bb-6376efe1b07f",
                   "__enabled": true,
                   "Flags": 0,
+                  "ChildWeightFraction": 0.5,
                   "OnComponentDestroy": null,
                   "OnComponentDisabled": null,
                   "OnComponentEnabled": null,
                   "OnComponentFixedUpdate": null,
                   "OnComponentStart": null,
                   "OnComponentUpdate": null,
+                  "PropagateToChildren": true,
                   "UseGlowEffectWhenCarried": true,
                   "Weight": 10
                 }
@@ -3208,12 +3215,14 @@
                   "__guid": "8004a65e-0e10-41ba-8e80-4ade97cb9214",
                   "__enabled": true,
                   "Flags": 0,
+                  "ChildWeightFraction": 0.5,
                   "OnComponentDestroy": null,
                   "OnComponentDisabled": null,
                   "OnComponentEnabled": null,
                   "OnComponentFixedUpdate": null,
                   "OnComponentStart": null,
                   "OnComponentUpdate": null,
+                  "PropagateToChildren": true,
                   "UseGlowEffectWhenCarried": true,
                   "Weight": 10
                 },
@@ -3436,12 +3445,14 @@
                   "__guid": "81e94e41-ed32-49ab-af49-bdc92d40a152",
                   "__enabled": true,
                   "Flags": 0,
+                  "ChildWeightFraction": 0.5,
                   "OnComponentDestroy": null,
                   "OnComponentDisabled": null,
                   "OnComponentEnabled": null,
                   "OnComponentFixedUpdate": null,
                   "OnComponentStart": null,
                   "OnComponentUpdate": null,
+                  "PropagateToChildren": true,
                   "UseGlowEffectWhenCarried": true,
                   "Weight": 10
                 }
@@ -3679,12 +3690,14 @@
               "__guid": "bf39092d-6874-482c-8d75-93100172af4c",
               "__enabled": true,
               "Flags": 0,
+              "ChildWeightFraction": 0.5,
               "OnComponentDestroy": null,
               "OnComponentDisabled": null,
               "OnComponentEnabled": null,
               "OnComponentFixedUpdate": null,
               "OnComponentStart": null,
               "OnComponentUpdate": null,
+              "PropagateToChildren": true,
               "UseGlowEffectWhenCarried": true,
               "Weight": 90
             }
@@ -3800,12 +3813,14 @@
               "__guid": "5e78472a-69db-4edc-bc22-08313e0913ba",
               "__enabled": true,
               "Flags": 0,
+              "ChildWeightFraction": 0.5,
               "OnComponentDestroy": null,
               "OnComponentDisabled": null,
               "OnComponentEnabled": null,
               "OnComponentFixedUpdate": null,
               "OnComponentStart": null,
               "OnComponentUpdate": null,
+              "PropagateToChildren": true,
               "UseGlowEffectWhenCarried": true,
               "Weight": 10
             }
@@ -3921,12 +3936,14 @@
               "__guid": "8a8e267c-a736-46c1-ac6b-2d31c0aa1087",
               "__enabled": true,
               "Flags": 0,
+              "ChildWeightFraction": 0.5,
               "OnComponentDestroy": null,
               "OnComponentDisabled": null,
               "OnComponentEnabled": null,
               "OnComponentFixedUpdate": null,
               "OnComponentStart": null,
               "OnComponentUpdate": null,
+              "PropagateToChildren": true,
               "UseGlowEffectWhenCarried": true,
               "Weight": 10
             }
@@ -4282,11 +4299,6 @@
       "CustomBounds": false
     },
     "GameObjectSystems": {
-      "Sandbox.Clutter.ClutterGridSystem": {
-        "Storage": {
-          "$blob": "c0c1fa7a-403b-437a-8935-8ea420ad4e19"
-        }
-      },
       "Sandbox.SelectionSetsSystem": {
         "Data": {
           "SelectionSets": []

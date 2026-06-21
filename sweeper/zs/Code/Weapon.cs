@@ -323,15 +323,6 @@ public class Weapon : Component
         var t3 = flash.Components.Create<TemporaryLife>();
         t3.LifeSeconds = 0.1f;
 
-        var flashCore = new GameObject();
-        flashCore.Name = "muzzle_flash_core";
-        var fcr = flashCore.Components.Create<ModelRenderer>();
-        fcr.Model = Model.Load( "models/dev/source/sphere.vmdl" );
-        flashCore.WorldPosition = start + dir * 0.08f;
-        flashCore.WorldScale = new Vector3( 0.08f, 0.08f, 0.08f );
-        try { fcr.Tint = Color.Yellow; } catch { }
-        var t5 = flashCore.Components.Create<TemporaryLife>();
-        t5.LifeSeconds = 0.08f;
 
         // Пружение гильзы: создаём объект с физикой и выбрасываем в сторону от дула
         var shell = new GameObject();
