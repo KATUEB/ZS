@@ -7,7 +7,7 @@ namespace ZS;
 /// <summary>
 /// Система взаимодействия с предметами: поднятие, перенос, вращение и закрепление в воздухе.
 /// Перенос реализован через физику (через Velocity/AngularVelocity), а не через жёсткий телепорт
-/// Transform.Position — поэтому предмет реально толкается, скользит и прокручивается об углы,
+/// Transform.WorldPosition — поэтому предмет реально толкается, скользит и прокручивается об углы,
 /// а не просто упирается и останавливается.
 /// </summary>
 public class UseButton : Component
@@ -78,7 +78,7 @@ public class UseButton : Component
 
 	/// <summary>
 	/// Имя Input Action для режима свободного вращения предмета (удержание).
-	/// ЭТОГО действия нет в стандартной раскладке s&box — добавь его в
+	/// ЭТОГО действия нет в стандартной раскладировке s&amp;box — добавь его в
 	/// Project Settings -> Input и впиши сюда то же имя, которое указал там.
 	/// </summary>
 	[Property]
@@ -86,6 +86,7 @@ public class UseButton : Component
 
 	private Rigidbody carriedObject;
 	private PickableItem carriedItem;
+	private Weapon equippedWeapon;
 	private List<Rigidbody> carriedSubParts = new();
 	private bool isCarrying => carriedObject != null;
 
@@ -98,12 +99,12 @@ public class UseButton : Component
 	private (Vector3 Position, Rotation Rotation) GetEyeTransform()
 	{
 		if ( CameraObject != null )
-			return (CameraObject.Transform.Position, CameraObject.Transform.Rotation);
+			return (CameraObject.WorldPosition, CameraObject.WorldRotation);
 
 		if ( Scene.Camera != null )
-			return (Scene.Camera.Transform.Position, Scene.Camera.Transform.Rotation);
+			return (Scene.Camera.GameObject.WorldPosition, Scene.Camera.GameObject.WorldRotation);
 
-		return (Transform.Position, Transform.Rotation);
+		return (GameObject.WorldPosition, GameObject.WorldRotation);
 	}
 
 	/// <summary>
@@ -120,6 +121,21 @@ public class UseButton : Component
 		{
 			var p = current.Components.Get<PickableItem>();
 			if ( p != null ) return p;
+			current = current.Parent;
+		}
+
+		return null;
+	}
+
+	private static Weapon FindWeapon( GameObject go )
+	{
+		var current = go;
+		int safety = 5;
+
+		while ( current != null && safety-- > 0 )
+		{
+			var w = current.Components.Get<Weapon>();
+			if ( w != null ) return w;
 			current = current.Parent;
 		}
 
@@ -153,12 +169,14 @@ public class UseButton : Component
 
 	private void HandleInput()
 	{
-		if ( Input.Pressed( "use" ) )
+		if ( Input.Pressed( "use" ) || Input.Pressed( "Use" ) )
 		{
-			Log.Info( $"Use нажата. Несу: {isCarrying}" );
+			Log.Info( $"Use нажата. Несу: {isCarrying}, Оружие экипировано: {equippedWeapon != null}" );
 
 			if ( isCarrying )
 				DropObject();
+			else if ( equippedWeapon != null )
+				DropEquippedWeapon();
 			else
 				TryPickupObject();
 		}
@@ -183,8 +201,20 @@ public class UseButton : Component
 			RotateCarriedObject();
 
 		// Secondary Attack - поставить предмет на месте навсегда и отпустить руки
-		if ( Input.Pressed( "attack2" ) && isCarrying )
+		if ( (Input.Pressed( "attack2" ) || Input.Pressed( "Attack2" )) && isCarrying )
 			PinAndReleaseObject();
+
+		// Primary Attack - стрельба, если оружие экипировано.
+		// Некоторые проекты/раскладки используют разные имена для левой кнопки мыши,
+		// поэтому реагируем на несколько возможных Input Action имён.
+		if ( Input.Pressed( "attack" ) || Input.Pressed( "Attack" ) || Input.Pressed( "attack1" ) || Input.Pressed( "Attack1" ) || Input.Pressed( "mouse1" ) || Input.Pressed( "mouse0" ) || Input.Pressed( "mouse_left" ) )
+		{
+			Log.Info( $"Attack pressed. Weapon equipped: {equippedWeapon != null}" );
+			if ( equippedWeapon != null )
+			{
+				equippedWeapon.Fire();
+			}
+		}
 	}
 
 	private void TryPickupObject()
@@ -209,6 +239,7 @@ public class UseButton : Component
 		float closestDistance = float.MaxValue;
 		Rigidbody closestRigidbody = null;
 		PickableItem closestPickable = null;
+		Weapon closestWeapon = null;
 
 		foreach ( var hit in hits )
 		{
@@ -218,13 +249,20 @@ public class UseButton : Component
 			Log.Info( $"Проверяю: {hitObject.Name}" );
 
 			var pickable = FindPickable( hitObject );
+			Weapon maybeWeapon = null;
 			if ( pickable == null )
 			{
-				Log.Info( $"  -> Нет PickableItem (ни на объекте, ни у родителей)" );
-				continue;
+				// Если PickableItem нет — проверим, может это просто Weapon (без PickableItem).
+				maybeWeapon = FindWeapon( hitObject );
+				if ( maybeWeapon == null )
+				{
+					Log.Info( $"  -> Нет PickableItem (ни на объекте, ни у родителей)" );
+					continue;
+				}
+				// у нас есть оружие без PickableItem — будем обрабатывать ниже как отдельный кейс
 			}
 
-			if ( pickable.Weight > MaxLiftWeight )
+			if ( pickable != null && pickable.Weight > MaxLiftWeight )
 			{
 				Log.Info( $"  -> Вес {pickable.Weight} > {MaxLiftWeight}" );
 				continue;
@@ -233,14 +271,27 @@ public class UseButton : Component
 			// Rigidbody берём с того же объекта, где PickableItem - так гарантированно
 			// двигаем именно ту иерархию, на которой висит сам предмет (и его визуал),
 			// а не случайный коллизионный кусок составной модели.
-			var rigidbody = pickable.GameObject.Components.Get<Rigidbody>();
-			if ( rigidbody == null )
+			Rigidbody rigidbody = null;
+			if ( pickable != null )
 			{
-				Log.Info( $"  -> На {pickable.GameObject.Name} нет Rigidbody" );
-				continue;
+				rigidbody = pickable.GameObject.Components.Get<Rigidbody>();
+				if ( rigidbody == null )
+				{
+					Log.Info( $"  -> На {pickable.GameObject.Name} нет Rigidbody" );
+					continue;
+				}
+			}
+			else if ( maybeWeapon != null )
+			{
+				rigidbody = maybeWeapon.GameObject.Components.Get<Rigidbody>();
+				if ( rigidbody == null )
+				{
+					Log.Info( $"  -> На оружии {maybeWeapon.GameObject.Name} нет Rigidbody" );
+					continue;
+				}
 			}
 
-			var distance = (pickable.GameObject.Transform.Position - startPos).Length;
+			var distance = ( (pickable != null ? pickable.GameObject.WorldPosition : maybeWeapon.GameObject.WorldPosition) - startPos ).Length;
 
 			Log.Info( $"  -> Можно поднять! Расстояние: {distance}" );
 
@@ -249,12 +300,34 @@ public class UseButton : Component
 				closestDistance = distance;
 				closestRigidbody = rigidbody;
 				closestPickable = pickable;
+				// если это оружие без PickableItem — сохраним его в closestPickable == null, но rigidbody укажем
+				if ( pickable == null && maybeWeapon != null )
+				{
+					closestWeapon = maybeWeapon;
+				}
 			}
 		}
 
 		if ( closestRigidbody != null && closestPickable != null )
 		{
-			PickupObject( closestRigidbody, closestPickable );
+			// Если это оружие — экипируем его в руки (первое лицо),
+			// вместо переноса через физику
+			var weapon = closestPickable.GameObject.Components.Get<Weapon>();
+			if ( weapon != null )
+			{
+				weapon.Equip( GameObject );
+				equippedWeapon = weapon;
+			}
+			else
+			{
+				PickupObject( closestRigidbody, closestPickable );
+			}
+		}
+		else if ( closestRigidbody != null && closestPickable == null && closestWeapon != null )
+		{
+			// Подобрали оружие, у которого нет PickableItem — экипируем
+			closestWeapon.Equip( GameObject );
+			equippedWeapon = closestWeapon;
 		}
 		else
 		{
@@ -289,7 +362,7 @@ public class UseButton : Component
 		foreach ( var part in carriedSubParts )
 			part.Enabled = false;
 
-		pickable.OnPickedUp();
+		pickable.OnPickedUp( GameObject );
 
 		Log.Info( $"Поднят предмет: {carriedObject.GameObject.Name}, вес: {pickable.Weight}, доп. деталей: {carriedSubParts.Count}" );
 	}
@@ -312,7 +385,7 @@ public class UseButton : Component
 			part.Enabled = true;
 		carriedSubParts.Clear();
 
-		carriedItem?.OnDropped();
+		carriedItem?.OnDropped( GameObject );
 
 		Log.Info( $"Отпущен предмет: {carriedObject.GameObject.Name}" );
 
@@ -327,7 +400,7 @@ public class UseButton : Component
 		var (eyePos, eyeRot) = GetEyeTransform();
 		var targetPos = eyePos + eyeRot.Forward * CarryDistance;
 
-		var currentPos = carriedObject.Transform.Position;
+		var currentPos = carriedObject.GameObject.WorldPosition;
 		var posError = targetPos - currentPos;
 
 		// Двигаем предмет через скорость (а не телепортом Transform.Position) -
@@ -384,7 +457,7 @@ public class UseButton : Component
 		// весь проп так и висит как единое целое, пока его не подберут заново.
 		carriedSubParts.Clear();
 
-		item?.OnDropped();
+		item?.OnDropped( GameObject );
 
 		Log.Info( $"Предмет {obj.GameObject.Name} закреплен в воздухе (навсегда, до повторного подбора)" );
 
@@ -392,6 +465,14 @@ public class UseButton : Component
 		// закреплённый предмет от этого никуда не денется
 		carriedObject = null;
 		carriedItem = null;
+	}
+
+	private void DropEquippedWeapon()
+	{
+		if ( equippedWeapon == null ) return;
+
+		equippedWeapon.Unequip( GameObject );
+		equippedWeapon = null;
 	}
 
 	private float CalculateSpeedMultiplier( float weight )

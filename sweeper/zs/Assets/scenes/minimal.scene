@@ -315,6 +315,19 @@
               "Viewport": "0,0,1,1",
               "ZFar": 10000,
               "ZNear": 10
+            },
+            {
+              "__type": "ZS.Crosshair",
+              "__guid": "2c212e3f-dee4-4e6d-84f4-cba78250c383",
+              "__enabled": true,
+              "Flags": 0,
+              "Distance": 200,
+              "OnComponentDestroy": null,
+              "OnComponentDisabled": null,
+              "OnComponentEnabled": null,
+              "OnComponentFixedUpdate": null,
+              "OnComponentStart": null,
+              "OnComponentUpdate": null
             }
           ],
           "Children": [
@@ -3911,11 +3924,7 @@
       "__version": 2,
       "Flags": 0,
       "Name": "corrugated_wall_a_128",
-<<<<<<< HEAD
       "Position": "-569.914246,-92.7024841,50.7444",
-=======
-      "Position": "95.1525574,8.94493484,1.65005493",
->>>>>>> 509c039c580155aca5a607991efe539e0bc5c236
       "Rotation": "0,0,0,1",
       "Scale": "1,1,1",
       "Tags": "",
@@ -4036,6 +4045,205 @@
         }
       ],
       "Children": []
+    },
+    {
+      "__guid": "62de6f12-ffb7-438b-9693-79d43c557938",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "w_mp5",
+      "Position": "-387.954468,147.48436,16.8811245",
+      "Rotation": "0,0,0,1",
+      "Scale": "1,1,0.99999994",
+      "Tags": "",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        {
+          "__type": "Sandbox.Prop",
+          "__guid": "26998a8d-5c0f-47f1-ba5b-e4b8dfd2b998",
+          "__enabled": true,
+          "Flags": 0,
+          "BodyGroups": 11,
+          "Health": 0,
+          "IsStatic": false,
+          "MaterialGroup": null,
+          "Model": "models/weapons/sbox_smg_mp5/w_mp5.vmdl",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "OnPropBreak": null,
+          "OnPropTakeDamage": null,
+          "StartAsleep": false,
+          "Tint": "1,1,1,1"
+        },
+        {
+          "__type": "ZS.Weapon",
+          "__guid": "755ace44-be39-4cf9-904e-27192025556b",
+          "__enabled": true,
+          "Flags": 0,
+          "ApplyHandPose": true,
+          "ArmsLocalPositionOffset": "0,0,0",
+          "ArmsLocalRotationOffset": "0,0,0,1",
+          "BulletForce": 100,
+          "BulletRange": 3000,
+          "FireSound": "sounds/weapons/pistol_fire.sound",
+          "FirstPersonOffset": "8,6,-10",
+          "FirstPersonRotation": "0,0,0,1",
+          "HideInWorldWhenEquipped": true,
+          "MuzzleFallbackOffset": "0.600000024,0,0",
+          "MuzzleName": "muzzle",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "PlayFireSound": false,
+          "ShellModel": "models/dev/box.vmdl"
+        },
+        {
+          "__type": "Sandbox.ModelRenderer",
+          "__guid": "707075c1-42b5-42a2-a702-59b3eb1c3360",
+          "__enabled": true,
+          "Flags": 0,
+          "BodyGroups": 11,
+          "CreateAttachments": false,
+          "LodOverride": null,
+          "MaterialGroup": null,
+          "MaterialOverride": null,
+          "Materials": null,
+          "Model": "models/weapons/sbox_smg_mp5/w_mp5.vmdl",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "RenderType": "On",
+          "Tint": "1,1,1,1"
+        },
+        {
+          "__type": "Sandbox.ModelCollider",
+          "__guid": "5a5e4306-ed81-4d59-9e7e-dd6422832a15",
+          "__enabled": true,
+          "Flags": 0,
+          "ColliderFlags": 0,
+          "Elasticity": null,
+          "Friction": null,
+          "IsTrigger": false,
+          "Model": "models/weapons/sbox_smg_mp5/w_mp5.vmdl",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "OnObjectTriggerEnter": null,
+          "OnObjectTriggerExit": null,
+          "OnTriggerEnter": null,
+          "OnTriggerExit": null,
+          "RollingResistance": null,
+          "Static": false,
+          "Surface": null,
+          "SurfaceVelocity": "0,0,0"
+        },
+        {
+          "__type": "Sandbox.Rigidbody",
+          "__guid": "c50b586b-801a-4d1d-9d17-3c313d2e0a0c",
+          "__enabled": true,
+          "Flags": 0,
+          "AngularDamping": 0,
+          "EnableImpactDamage": true,
+          "EnhancedCcd": false,
+          "Gravity": true,
+          "GravityScale": 1,
+          "ImpactDamage": 0,
+          "LinearDamping": 0,
+          "Locking": {
+            "X": false,
+            "Y": false,
+            "Z": false,
+            "Pitch": false,
+            "Yaw": false,
+            "Roll": false
+          },
+          "MassCenterOverride": "0,0,0",
+          "MassOverride": 2.8,
+          "MinImpactDamageSpeed": 500,
+          "MotionEnabled": true,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "OverrideMassCenter": false,
+          "RigidbodyFlags": 0,
+          "SleepThreshold": 2,
+          "StartAsleep": false
+        }
+      ],
+      "Children": [
+        {
+          "__guid": "c329c645-caee-410e-a1b0-8d5fc9fbd3e4",
+          "__version": 2,
+          "Flags": 0,
+          "Name": "muzzle",
+          "Position": "15.8218079,0.413635254,8.1804285",
+          "Rotation": "0,0,0,1",
+          "Scale": "0.130000234,0.030000193,0.0299998503",
+          "Tags": "",
+          "Enabled": true,
+          "NetworkMode": 2,
+          "NetworkFlags": 0,
+          "NetworkOrphaned": 0,
+          "NetworkTransmit": true,
+          "OwnerTransfer": 1,
+          "Components": [
+            {
+              "__type": "Sandbox.ModelRenderer",
+              "__guid": "e9bb4a84-1516-4303-b55b-6ea94f376308",
+              "__enabled": true,
+              "Flags": 0,
+              "BodyGroups": 18446744073709551615,
+              "CreateAttachments": false,
+              "LodOverride": null,
+              "MaterialGroup": null,
+              "MaterialOverride": null,
+              "Materials": null,
+              "Model": "models/dev/box.vmdl",
+              "OnComponentDestroy": null,
+              "OnComponentDisabled": null,
+              "OnComponentEnabled": null,
+              "OnComponentFixedUpdate": null,
+              "OnComponentStart": null,
+              "OnComponentUpdate": null,
+              "RenderOptions": {
+                "GameLayer": true,
+                "OverlayLayer": false,
+                "BloomLayer": false,
+                "AfterUILayer": false
+              },
+              "RenderType": "On",
+              "Tint": "1,1,1,0.03"
+            }
+          ],
+          "Children": []
+        }
+      ]
     }
   ],
   "SceneProperties": {
@@ -4058,11 +4266,6 @@
       "CustomBounds": false
     },
     "GameObjectSystems": {
-      "Sandbox.Clutter.ClutterGridSystem": {
-        "Storage": {
-          "$blob": "33085cdb-8a07-4434-a85c-0e803814bd4c"
-        }
-      },
       "Sandbox.SelectionSetsSystem": {
         "Data": {
           "SelectionSets": []
@@ -4081,6 +4284,7 @@
     "facepunch.storage_box_02#282045",
     "facepunch.storage_plastic_box_01#279767",
     "facepunch.v_first_person_arms_human#205798",
+    "facepunch.w_mp5#279124",
     "hecker.table#34145",
     "pcjr.chair20#41836",
     "randkassets.aschair#26686"

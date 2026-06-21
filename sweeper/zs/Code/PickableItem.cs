@@ -1,4 +1,5 @@
 using Sandbox;
+using System.Linq;
 
 namespace ZS;
 
@@ -40,7 +41,7 @@ public class PickableItem : Component
 		}
 	}
 
-	public void OnPickedUp()
+	public void OnPickedUp( GameObject picker )
 	{
 		isCarried = true;
 
@@ -50,10 +51,10 @@ public class PickableItem : Component
 			ApplyCarryEffect();
 		}
 
-		Log.Info( $"Предмет {GameObject.Name} поднят (вес: {Weight})" );
+		Log.Info( $"Предмет {GameObject.Name} поднят игроком {picker?.Name ?? "(неизвестный)"} (вес: {Weight})" );
 	}
 
-	public void OnDropped()
+	public void OnDropped( GameObject picker )
 	{
 		isCarried = false;
 
@@ -63,7 +64,7 @@ public class PickableItem : Component
 			RemoveCarryEffect();
 		}
 
-		Log.Info( $"Предмет {GameObject.Name} отпущен" );
+		Log.Info( $"Предмет {GameObject.Name} отпущен игроком {picker?.Name ?? "(неизвестный)"}" );
 	}
 
 	private void ApplyCarryEffect()
