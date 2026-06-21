@@ -328,6 +328,22 @@
               "OnComponentFixedUpdate": null,
               "OnComponentStart": null,
               "OnComponentUpdate": null
+            },
+            {
+              "__type": "ZS.ViewmodelComponent",
+              "__guid": "7f5b167c-11ec-4804-88b7-95b27fce1960",
+              "__enabled": true,
+              "Flags": 0,
+              "OnComponentDestroy": null,
+              "OnComponentDisabled": null,
+              "OnComponentEnabled": null,
+              "OnComponentFixedUpdate": null,
+              "OnComponentStart": null,
+              "OnComponentUpdate": null,
+              "ViewmodelObject": {
+                "_type": "gameobject",
+                "go": "629ea4d3-8706-4acf-9f64-9cc710ebea8a"
+              }
             }
           ],
           "Children": [
@@ -4266,6 +4282,11 @@
       "CustomBounds": false
     },
     "GameObjectSystems": {
+      "Sandbox.Clutter.ClutterGridSystem": {
+        "Storage": {
+          "$blob": "c0c1fa7a-403b-437a-8935-8ea420ad4e19"
+        }
+      },
       "Sandbox.SelectionSetsSystem": {
         "Data": {
           "SelectionSets": []
