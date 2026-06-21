@@ -3,20 +3,15 @@ using Sandbox;
 namespace ZS;
 
 /// <summary>
-/// Вспомогательный компонент для управления скоростью игрока в зависимости от переносимого предмета.
-/// Подключите этот компонент к игроку вместе с UseButton.
-/// 
-/// ВАЖНО (FIX 4): Теперь основная логика изменения WalkSpeed находится прямо в UseButton —
-/// он напрямую меняет PlayerController.WalkSpeed при подъёме и возвращает при опускании.
-/// Этот компонент оставлен для HUD и внешних запросов текущей скорости.
+/// Вспомогательный компонент для управления скоростью игрока в зависимости от переносимого предмета
+/// Подключите этот компонент к игроку вместе с UseButton
 /// </summary>
 public class CarrySpeedController : Component
 {
 	private UseButton useButton;
 
 	/// <summary>
-	/// Базовая скорость игрока (когда ничего не носит).
-	/// Должна совпадать с BaseCarrySpeed в UseButton и Walk Speed в PlayerController.
+	/// Базовая скорость игрока (когда ничего не носит)
 	/// </summary>
 	[Property]
 	public float BasePlayerSpeed { get; set; } = 200f;
@@ -28,8 +23,8 @@ public class CarrySpeedController : Component
 	}
 
 	/// <summary>
-	/// Возвращает текущую скорость игрока с учетом веса переносимого предмета.
-	/// Используйте это значение для HUD.
+	/// Возвращает текущую скорость игрока с учетом веса переносимого предмета
+	/// Используйте это значение для ограничения скорости передвижения
 	/// </summary>
 	public float GetCurrentSpeed()
 	{
@@ -40,12 +35,13 @@ public class CarrySpeedController : Component
 	}
 
 	/// <summary>
-	/// Возвращает процент от максимальной скорости (для HUD).
+	/// Возвращает процент от максимальной скорости
+	/// Для отображения на HUD
 	/// </summary>
 	public float GetSpeedPercent()
 	{
 		var currentSpeed = GetCurrentSpeed();
-		return (currentSpeed / BasePlayerSpeed) * 100f;
+		return (currentSpeed / (BasePlayerSpeed * 1.2f)) * 100f; // 120% - максимум
 	}
 
 	/// <summary>
@@ -54,8 +50,7 @@ public class CarrySpeedController : Component
 	public bool IsCarrying => useButton != null && useButton.IsCarrying;
 
 	/// <summary>
-	/// Проверяет, закреплен ли предмет (IsPinned в UseButton всегда false пока держишь,
-	/// свойство оставлено для совместимости)
+	/// Проверяет, закреплен ли переносимый предмет
 	/// </summary>
 	public bool IsPinned => useButton != null && useButton.IsPinned;
 }
