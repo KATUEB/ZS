@@ -266,14 +266,12 @@ public class UseButton : Component
 			Weapon maybeWeapon = null;
 			if ( pickable == null )
 			{
-				// Если PickableItem нет — проверим, может это просто Weapon (без PickableItem).
 				maybeWeapon = FindWeapon( hitObject );
 				if ( maybeWeapon == null )
 				{
 					Log.Info( $"  -> Нет PickableItem (ни на объекте, ни у родителей)" );
 					continue;
 				}
-				// у нас есть оружие без PickableItem — будем обрабатывать ниже как отдельный кейс
 			}
 
 			if ( pickable != null && pickable.Weight > MaxLiftWeight )
@@ -282,35 +280,24 @@ public class UseButton : Component
 				continue;
 			}
 
-			// FIX 1: Если предмет закреплён (Rigidbody выключен) — включаем его обратно перед подъёмом
-			var rigidbody = pickable.GameObject.Components.Get<Rigidbody>();
+			var targetGo = pickable != null ? pickable.GameObject : maybeWeapon?.GameObject;
+			if ( targetGo == null ) continue;
+
+			var rigidbody = targetGo.Components.Get<Rigidbody>();
 			if ( rigidbody == null )
 			{
-				rigidbody = pickable.GameObject.Components.Get<Rigidbody>();
-				if ( rigidbody == null )
-				{
-					Log.Info( $"  -> На {pickable.GameObject.Name} нет Rigidbody" );
-					continue;
-				}
-			}
-			else if ( maybeWeapon != null )
-			{
-				rigidbody = maybeWeapon.GameObject.Components.Get<Rigidbody>();
-				if ( rigidbody == null )
-				{
-					Log.Info( $"  -> На оружии {maybeWeapon.GameObject.Name} нет Rigidbody" );
-					continue;
-				}
+				Log.Info( $"  -> На {targetGo.Name} нет Rigidbody" );
+				continue;
 			}
 
-			if ( pickable.IsPinned )
+			if ( pickable != null && pickable.IsPinned )
 			{
 				Log.Info( $"  -> Предмет закреплён, открепляем перед подъёмом" );
 				rigidbody.Enabled = true;
 				pickable.SetPinned( false );
 			}
 
-			var distance = (pickable.GameObject.Transform.Position - startPos).Length;
+			var distance = (targetGo.WorldPosition - startPos).Length;
 
 			Log.Info( $"  -> Можно поднять! Расстояние: {distance}" );
 
@@ -319,7 +306,6 @@ public class UseButton : Component
 				closestDistance = distance;
 				closestRigidbody = rigidbody;
 				closestPickable = pickable;
-				// если это оружие без PickableItem — сохраним его в closestPickable == null, но rigidbody укажем
 				if ( pickable == null && maybeWeapon != null )
 				{
 					closestWeapon = maybeWeapon;
@@ -378,7 +364,7 @@ public class UseButton : Component
 		// FIX 4: Снижаем скорость ходьбы через PlayerController
 		ApplyWeightSpeedPenalty( pickable.Weight );
 
-		pickable.OnPickedUp();
+																		pickable.OnPickedUp( GameObject );
 
 		Log.Info( $"Поднят предмет: {carriedObject.GameObject.Name}, вес: {pickable.Weight}, доп. деталей: {carriedSubParts.Count}" );
 	}
@@ -404,12 +390,19 @@ public class UseButton : Component
 		// FIX 4: Возвращаем нормальную скорость
 		RestoreNormalSpeed();
 
-		carriedItem?.OnDropped();
+		carriedItem?.OnDropped( GameObject );
 
 		Log.Info( $"Отпущен предмет: {carriedObject.GameObject.Name}" );
 
 		carriedObject = null;
 		carriedItem = null;
+	}
+
+	private void DropEquippedWeapon()
+	{
+		if ( equippedWeapon == null ) return;
+		equippedWeapon.Unequip( GameObject );
+		equippedWeapon = null;
 	}
 
 	private void UpdateCarriedObject()
@@ -465,7 +458,7 @@ public class UseButton : Component
 	{
 		carriedSubParts.Clear();
 		RestoreNormalSpeed();
-		carriedItem?.OnDropped();
+		carriedItem?.OnDropped( GameObject );
 		carriedObject = null;
 		carriedItem = null;
 		IsFreeRotating = false;
@@ -508,7 +501,7 @@ public class UseButton : Component
 		// FIX 4: Возвращаем скорость при закреплении
 		RestoreNormalSpeed();
 
-		item?.OnDropped();
+		item?.OnDropped( GameObject );
 
 		Log.Info( $"Предмет {obj.GameObject.Name} закреплён в воздухе (IsPinned=true, поднимется через Use)" );
 
