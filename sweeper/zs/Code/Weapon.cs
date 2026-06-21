@@ -222,7 +222,7 @@ public class Weapon : Component
             var dbgMarker = new GameObject();
             dbgMarker.Name = "DEBUG_muzzle_point";
             var dbgRend = dbgMarker.Components.Create<ModelRenderer>();
-            dbgRend.Model = Model.Load( "models/dev/sphere.vmdl" );
+            dbgRend.Model = Model.Load( "models/dev/source/sphere.vmdl" );
             dbgMarker.WorldPosition = muzzle.WorldPosition;
             dbgMarker.WorldScale = new Vector3( 0.05f, 0.05f, 0.05f );
             var dbgLife = dbgMarker.Components.Create<TemporaryLife>();
@@ -314,8 +314,8 @@ public class Weapon : Component
         // Мюзлфлеш: огненная вспышка из дула
         var flash = new GameObject();
         flash.Name = "muzzle_flash";
-        var fr = flash.Components.Create<ModelRenderer>();
-        fr.Model = Model.Load( "models/dev/source/sphere.vmdl" );
+            var fr = flash.Components.Create<ModelRenderer>();
+            fr.Model = Model.Load( "models/dev/source/sphere.vmdl" );
         flash.WorldPosition = start + dir * 0.15f;
         flash.WorldRotation = Rotation.LookAt( dir );
         flash.WorldScale = new Vector3( 0.12f, 0.12f, 0.28f );
@@ -326,7 +326,7 @@ public class Weapon : Component
         var flashCore = new GameObject();
         flashCore.Name = "muzzle_flash_core";
         var fcr = flashCore.Components.Create<ModelRenderer>();
-        fcr.Model = Model.Load( "models/dev/sphere.vmdl" );
+        fcr.Model = Model.Load( "models/dev/source/sphere.vmdl" );
         flashCore.WorldPosition = start + dir * 0.08f;
         flashCore.WorldScale = new Vector3( 0.08f, 0.08f, 0.08f );
         try { fcr.Tint = Color.Yellow; } catch { }
